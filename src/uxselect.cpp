@@ -1,10 +1,23 @@
+#include <sys/shm.h>
+
 #include "uxselect.h"
+
 
 UxSelect *UxSelect::UxSelectInstance;
 
 UxSelect::UxSelect(): QMainWindow(){
   setupUi(this);
   UxSelectInstance=this;
+
+  shmId=getenv("SHM_ID");
+
+  if (shmId.isNull())
+    qDebug() << "No SHM available!";
+  else
+    qDebug() << "SHM_ID: " << shmId;
+
+  if (getenv("UX_USER"))
+    userInput->setText(getenv("UX_USER"));
 
   // insert some items for testing
   QListWidgetItem *item=new QListWidgetItem;
@@ -56,6 +69,7 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
 }
 
 void UxSelect::tryLogin(){
+  // try to do pam-foo, if required
   pamh=NULL;
   pamc.conv=&pamConversation;
   pamc.appdata_ptr=NULL;
@@ -74,4 +88,15 @@ void UxSelect::tryLogin(){
     qDebug() << "Success!";
 
   pam_end(pamh, ret);
+
+  // throw the collected data into SHM, or just to stdout if SHM is not available
+  if (shmId.isNull()){
+    qDebug() << "Username: " << userInput->text();
+    qDebug() << "Session: ";
+  } else {
+    shm=(shm_exchange *) shmat(shmId.toInt(), 0, 0);
+    strncpy(shm->user, userInput->text().toLatin1(), 255);
+    strncpy(shm->session, "/usr/bin/ion3", PATH_MAX);
+    shmdt(shm);
+  }
 }

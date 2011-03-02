@@ -3,4 +3,5 @@ contains(QT_VERSION, ^4\.[0-5]\..*) {
 }
 
 TEMPLATE = subdirs
-SUBDIRS = src
+SUBDIRS = src \
+        shmlaunch

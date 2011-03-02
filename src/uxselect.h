@@ -10,6 +10,8 @@
 #include <security/pam_appl.h>
 #include "ui_uxselect.h"
 
+#include "shmdata.h"
+
 class UxSelect: public QMainWindow, Ui::UxSelect {
   Q_OBJECT
 
@@ -19,6 +21,8 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   private:
   int ret;
   pam_handle_t *pamh;
+  QString shmId;
+  shm_exchange *shm;
   struct pam_conv pamc;
   static UxSelect *UxSelectInstance;
 
