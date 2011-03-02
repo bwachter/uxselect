@@ -1,5 +1,6 @@
 #include <sys/shm.h>
-
+#include <sys/types.h>
+#include <pwd.h>
 #include "uxselect.h"
 
 
@@ -28,6 +29,8 @@ UxSelect::UxSelect(): QMainWindow(){
   item->setText("fvwm2");
   item->setIcon(QIcon(":/images/aardvark_icon.png"));
   uxSelectionList->insertItem(0, item);
+
+  createUserList();
 }
 
 int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
@@ -68,6 +71,30 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
 
   *resp=pamr;
   return PAM_SUCCESS;
+}
+
+void UxSelect::createUserList(){
+  struct passwd *pwent;
+  setpwent();
+  for (pwent=getpwent();pwent!=NULL;pwent=getpwent()){
+    if (pwent->pw_uid<LOWEST_ID) continue;
+    if (!strcmp(pwent->pw_shell, "/bin/false")) continue;
+    QListWidgetItem *item=new QListWidgetItem;
+    //item->setText(pwent->pw_gecos);
+    //TODO: GECOS parsing
+    item->setText(pwent->pw_name);
+    item->setData(Qt::UserRole, pwent->pw_name);
+    item->setIcon(QIcon(":/images/aardvark_icon.png"));
+    userSelectionList->insertItem(0, item);
+    qDebug() << "New user: " << pwent->pw_name << ", " << pwent->pw_uid
+             << ", " << pwent->pw_shell;
+    pwent = getpwent();
+  }
+  endpwent();
+}
+
+void UxSelect::selectUser(QListWidgetItem *item){
+  userInput->setText(item->data(Qt::UserRole).toString());
 }
 
 void UxSelect::tryLogin(){

@@ -216,8 +216,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>userSelectionList</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>UxSelect</receiver>
+   <slot>selectUser(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>137</x>
+     <y>128</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>351</x>
+     <y>214</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>tryLogin()</slot>
+  <slot>selectUser(QListWidgetItem*)</slot>
  </slots>
 </ui>
