@@ -8,4 +8,7 @@ TEMPLATE = app
 TARGET = uxselect
 LIBS += -lpam
 
+unix:target.path = $${PREFIX}/${PREFIX}/bin
+INSTALLS += target
+
 !include( ../buildpath.pri ) { error("Unable to find build path specification") }
