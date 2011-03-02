@@ -22,9 +22,11 @@ UxSelect::UxSelect(): QMainWindow(){
   // insert some items for testing
   QListWidgetItem *item=new QListWidgetItem;
   item->setText("ion3");
+  item->setIcon(QIcon(":/images/aardvark_icon.png"));
   uxSelectionList->insertItem(0, item);
   item=new QListWidgetItem;
   item->setText("fvwm2");
+  item->setIcon(QIcon(":/images/aardvark_icon.png"));
   uxSelectionList->insertItem(0, item);
 }
 

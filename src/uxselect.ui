@@ -32,6 +32,18 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="dragDropMode">
+         <enum>QAbstractItemView::NoDragDrop</enum>
+        </property>
+        <property name="movement">
+         <enum>QListView::Static</enum>
+        </property>
+        <property name="resizeMode">
+         <enum>QListView::Adjust</enum>
+        </property>
+        <property name="viewMode">
+         <enum>QListView::IconMode</enum>
+        </property>
        </widget>
       </item>
       <item>
@@ -57,6 +69,12 @@
           <width>0</width>
           <height>0</height>
          </size>
+        </property>
+        <property name="dragDropMode">
+         <enum>QAbstractItemView::NoDragDrop</enum>
+        </property>
+        <property name="movement">
+         <enum>QListView::Static</enum>
         </property>
         <property name="resizeMode">
          <enum>QListView::Adjust</enum>
