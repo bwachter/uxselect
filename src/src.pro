@@ -6,3 +6,5 @@ SOURCES = main.cpp \
 TEMPLATE = app
 TARGET = uxselect
 LIBS += -lpam
+
+!include( ../buildpath.pri ) { error("Unable to find build path specification") }

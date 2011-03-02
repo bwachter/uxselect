@@ -1,3 +1,4 @@
 *.o
 Makefile
 ui_*.h
+build/

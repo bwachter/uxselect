@@ -6,13 +6,13 @@ UxSelect::UxSelect(): QMainWindow(){
   setupUi(this);
   UxSelectInstance=this;
 
-  pamh=NULL;
-  pamc.conv=&pamConversation;
-  pamc.appdata_ptr=NULL;
-
-  ret=pam_start("login", "bwachter", &pamc, &pamh);
-  if (ret!=PAM_SUCCESS)
-    qDebug() << "pam_start failed: " << pam_strerror(NULL, ret);
+  // insert some items for testing
+  QListWidgetItem *item=new QListWidgetItem;
+  item->setText("ion3");
+  uxSelectionList->insertItem(0, item);
+  item=new QListWidgetItem;
+  item->setText("fvwm2");
+  uxSelectionList->insertItem(0, item);
 }
 
 int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
@@ -56,10 +56,22 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
 }
 
 void UxSelect::tryLogin(){
+  pamh=NULL;
+  pamc.conv=&pamConversation;
+  pamc.appdata_ptr=NULL;
+
+  ret=pam_start("login",
+                userInput->text().toLatin1()
+                , &pamc, &pamh);
+  if (ret!=PAM_SUCCESS)
+    qDebug() << "pam_start failed: " << pam_strerror(NULL, ret);
+
   qDebug() << "Trying PAM auth";
   ret=pam_authenticate(pamh, 0);
   if (ret!=PAM_SUCCESS){
     qDebug() << "We're doomed: " << pam_strerror(pamh, ret);
   } else
     qDebug() << "Success!";
+
+  pam_end(pamh, ret);
 }
