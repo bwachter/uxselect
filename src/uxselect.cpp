@@ -18,9 +18,10 @@ UxSelect::UxSelect(): QMainWindow(){
   }
 
   shmId=getenv("SHM_ID");
-  if (shmId.isNull())
+  if (shmId.isNull()){
     qDebug() << "No SHM available!";
-  else
+    messageLabel->setText("No SHM available.");
+  } else
     qDebug() << "SHM_ID: " << shmId;
 
   //FIXME, take this from pre-initialized SHM area
@@ -186,6 +187,8 @@ void UxSelect::selectUser(QListWidgetItem *item){
 }
 
 void UxSelect::selectUx(QListWidgetItem *item){
+  uxDescriptionLabel->setText(item->data(Qt::UserRole).toString());
+
   if (uxConfig == UxDisplaySession)
     dumpData();
 }
@@ -207,6 +210,7 @@ void UxSelect::tryLogin(){
     ret=pam_authenticate(pamh, 0);
     if (ret!=PAM_SUCCESS){
       //FIXME, make some nice UI foo about login failed
+      messageLabel->setText("Login failed.");
       qDebug() << "We're doomed: " << pam_strerror(pamh, ret);
     } else
       dumpData();
