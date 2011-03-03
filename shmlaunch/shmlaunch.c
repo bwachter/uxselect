@@ -32,7 +32,7 @@ int main(){
     waitpid(pid, 0, 0);
   }
 
-  printf("SHM contents:\n user: %s,\n session: %s\n", shm->user, shm->session);
+  printf("SHM contents:\n user: %s,\n session: %s\n", shm->user, shm->session_path);
   shmctl(shm_id, IPC_RMID, 0);
 
   return 0;

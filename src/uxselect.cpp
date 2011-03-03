@@ -10,27 +10,35 @@ UxSelect::UxSelect(): QMainWindow(){
   setupUi(this);
   UxSelectInstance=this;
 
-  shmId=getenv("SHM_ID");
+  bool initialized=settings.value("initialized").toBool();
+  if (!initialized){
+    qDebug() << "Setting initial settings...";
+    settings.setValue("initialized", true);
+    settings.setValue("uxconfig", UxDisplaySession|UxDisplayUser);
+  }
 
+  shmId=getenv("SHM_ID");
   if (shmId.isNull())
     qDebug() << "No SHM available!";
   else
     qDebug() << "SHM_ID: " << shmId;
 
+  //FIXME, take this from pre-initialized SHM area
   if (getenv("UX_USER"))
     userInput->setText(getenv("UX_USER"));
 
-  // insert some items for testing
-  QListWidgetItem *item=new QListWidgetItem;
-  item->setText("ion3");
-  item->setIcon(QIcon(":/images/aardvark_icon.png"));
-  uxSelectionList->insertItem(0, item);
-  item=new QListWidgetItem;
-  item->setText("fvwm2");
-  item->setIcon(QIcon(":/images/aardvark_icon.png"));
-  uxSelectionList->insertItem(0, item);
+  uxConfig=static_cast<UxConfig>(settings.value("uxconfig").toInt());
+  qDebug() << uxConfig << (uxConfig & UxDisplayPassword) << (uxConfig & UxDisplaySession);
+  if (!isPasswordWidgetActive())
+    displayPasswordWidgets(false);
 
-  createUserList();
+  if (!isUserWidgetActive())
+    displayUserWidgets(false);
+  else createUserList();
+
+  if (!isSessionWidgetActive())
+    displaySessionWidgets(false);
+  else createUxList();
 }
 
 int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
@@ -93,39 +101,118 @@ void UxSelect::createUserList(){
   endpwent();
 }
 
-void UxSelect::selectUser(QListWidgetItem *item){
-  userInput->setText(item->data(Qt::UserRole).toString());
+void UxSelect::createUxList(){
+  //FIXME, ignore empty/bogus entries
+  QStringList sessionList=settings.value("uxlist").toStringList();
+
+  for (int i=0;i<sessionList.size();i++){
+    QListWidgetItem *item=new QListWidgetItem;
+    settings.beginGroup(sessionList.at(i));
+    item->setText(settings.value("name").toString());
+    item->setData(Qt::UserRole, settings.value("path").toString());
+    item->setData(Qt::UserRole+1, settings.value("description").toString());
+    item->setIcon(QIcon(":/images/aardvark_icon.png"));
+    settings.endGroup();
+    uxSelectionList->insertItem(0, item);
+  }
 }
 
-void UxSelect::tryLogin(){
-  // try to do pam-foo, if required
-  pamh=NULL;
-  pamc.conv=&pamConversation;
-  pamc.appdata_ptr=NULL;
+void UxSelect::dumpData(){
+  QListWidgetItem *selectedUx=NULL;
 
-  ret=pam_start("login",
-                userInput->text().toLatin1()
-                , &pamc, &pamh);
-  if (ret!=PAM_SUCCESS)
-    qDebug() << "pam_start failed: " << pam_strerror(NULL, ret);
-
-  qDebug() << "Trying PAM auth";
-  ret=pam_authenticate(pamh, 0);
-  if (ret!=PAM_SUCCESS){
-    qDebug() << "We're doomed: " << pam_strerror(pamh, ret);
-  } else
-    qDebug() << "Success!";
-
-  pam_end(pamh, ret);
+  if (isSessionWidgetActive())
+    selectedUx = uxSelectionList->currentItem();
 
   // throw the collected data into SHM, or just to stdout if SHM is not available
   if (shmId.isNull()){
-    qDebug() << "Username: " << userInput->text();
-    qDebug() << "Session: ";
+    if (isUserWidgetActive())
+      qDebug() << "Username: " << userInput->text();
+
+    if (isSessionWidgetActive())
+      qDebug() << "Session: " << selectedUx->data(Qt::UserRole).toString();
   } else {
     shm=(shm_exchange *) shmat(shmId.toInt(), 0, 0);
-    strncpy(shm->user, userInput->text().toLatin1(), 255);
-    strncpy(shm->session, "/usr/bin/ion3", PATH_MAX);
+
+    if (isUserWidgetActive())
+      strncpy(shm->user, userInput->text().toLatin1(), 255);
+
+    if (isSessionWidgetActive()){
+      strncpy(shm->session_path,
+              selectedUx->data(Qt::UserRole).toString().toLatin1(), PATH_MAX);
+      strncpy(shm->session_name,
+              selectedUx->text().toLatin1(), UXLAUNCH_NAME_LIMIT);
+    }
+
     shmdt(shm);
+  }
+
+  QCoreApplication::exit(0);
+}
+
+void UxSelect::displayUserWidgets(bool state){
+  userSelectionList->setVisible(state);
+  userSelectionLabel->setVisible(state);
+  userDescriptionLabel->setVisible(state);
+  userLabel->setVisible(state);
+  userInput->setVisible(state);
+}
+
+void UxSelect::displayPasswordWidgets(bool state){
+  passwordLabel->setVisible(state);
+  passwordInput->setVisible(state);
+}
+
+void UxSelect::displaySessionWidgets(bool state){
+  uxSelectionList->setVisible(state);
+  uxSelectionLabel->setVisible(state);
+}
+
+bool UxSelect::isPasswordWidgetActive(){
+  return (uxConfig & UxDisplayPassword) ? true : false;
+}
+
+bool UxSelect::isUserWidgetActive(){
+  return (uxConfig & UxDisplayUser) ? true : false;
+}
+
+bool UxSelect::isSessionWidgetActive(){
+  return (uxConfig & UxDisplaySession) ? true : false;
+}
+
+void UxSelect::selectUser(QListWidgetItem *item){
+  userInput->setText(item->data(Qt::UserRole).toString());
+  if (uxConfig == UxDisplayUser)
+    dumpData();
+}
+
+void UxSelect::selectUx(QListWidgetItem *item){
+  if (uxConfig == UxDisplaySession)
+    dumpData();
+}
+
+void UxSelect::tryLogin(){
+  if (isPasswordWidgetActive()){
+    // try to do pam-foo, if required
+    pamh=NULL;
+    pamc.conv=&pamConversation;
+    pamc.appdata_ptr=NULL;
+
+    ret=pam_start("login",
+                  userInput->text().toLatin1()
+                  , &pamc, &pamh);
+    if (ret!=PAM_SUCCESS)
+      qDebug() << "pam_start failed: " << pam_strerror(NULL, ret);
+
+    qDebug() << "Trying PAM auth";
+    ret=pam_authenticate(pamh, 0);
+    if (ret!=PAM_SUCCESS){
+      //FIXME, make some nice UI foo about login failed
+      qDebug() << "We're doomed: " << pam_strerror(pamh, ret);
+    } else
+      dumpData();
+
+    pam_end(pamh, ret);
+  } else {
+    dumpData();
   }
 }

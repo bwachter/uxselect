@@ -19,8 +19,15 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
 
   public:
   UxSelect();
+  enum UxConfig {
+    UxDisplayPassword=1,
+    UxDisplayUser=2,
+    UxDisplaySession=4
+  };
 
   private:
+  UxConfig uxConfig;
+  QSettings settings;
   int ret;
   pam_handle_t *pamh;
   QString shmId;
@@ -28,13 +35,22 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   struct pam_conv pamc;
   static UxSelect *UxSelectInstance;
 
+  void dumpData();
   void createUserList();
+  void createUxList();
+  void displayUserWidgets(bool state);
+  void displayPasswordWidgets(bool state);
+  void displaySessionWidgets(bool state);
+  bool isPasswordWidgetActive();
+  bool isUserWidgetActive();
+  bool isSessionWidgetActive();
   static int pamConversation(int num_msg, const struct pam_message **msg,
                              struct pam_response **resp, void *appdata_ptr);
 
   public slots:
   void tryLogin();
   void selectUser(QListWidgetItem *item);
+  void selectUx(QListWidgetItem *item);
 };
 
 

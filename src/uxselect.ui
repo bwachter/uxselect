@@ -191,8 +191,8 @@
    <slot>tryLogin()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>82</y>
+     <x>613</x>
+     <y>398</y>
     </hint>
     <hint type="destinationlabel">
      <x>638</x>
@@ -232,9 +232,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>uxSelectionList</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>UxSelect</receiver>
+   <slot>selectUx(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>137</x>
+     <y>318</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>351</x>
+     <y>214</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>tryLogin()</slot>
   <slot>selectUser(QListWidgetItem*)</slot>
+  <slot>selectUx(QListWidgetItem*)</slot>
  </slots>
 </ui>

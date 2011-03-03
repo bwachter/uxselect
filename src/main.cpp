@@ -4,8 +4,8 @@
 int main(int argc, char** argv){
 
   QApplication app(argc, argv);
-  QCoreApplication::setOrganizationName("LART");
-  QCoreApplication::setOrganizationDomain("lart.info");
+  QCoreApplication::setOrganizationName("aard");
+  QCoreApplication::setOrganizationDomain("bwachter.lart.info");
   QCoreApplication::setApplicationName("uxselect");
 
   QTranslator qtTranslator;
