@@ -113,14 +113,13 @@ void UxSelect::createUxList(){
   for (int i=0;i<sessionList.size();i++){
     QListWidgetItem *item=new QListWidgetItem;
     settings.beginGroup(sessionList.at(i));
-    if (!QFile::exists(settings.value("path").toString()))
-      continue;
     item->setText(settings.value("name").toString());
     item->setData(Qt::UserRole, settings.value("path").toString());
     item->setData(Qt::UserRole+1, settings.value("description").toString());
     item->setIcon(QIcon(":/images/aardvark_icon.png"));
     settings.endGroup();
-    uxSelectionList->insertItem(0, item);
+    if (QFile::exists(item->data(Qt::UserRole).toString()))
+      uxSelectionList->insertItem(0, item);
   }
 }
 

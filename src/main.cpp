@@ -19,6 +19,7 @@ int main(int argc, char** argv){
 
   UxSelect mw;
   mw.show();
+  mw.showFullScreen();
 
   return app.exec();
 }
