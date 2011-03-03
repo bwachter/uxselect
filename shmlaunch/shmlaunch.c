@@ -27,7 +27,8 @@ int main(){
   printf("SHM_ID: %i\n", shm_id);
   snprintf(shm_id_str, 50, "%i", shm_id);
   setenv("SHM_ID", shm_id_str, 1);
-  setenv("UX_USER", "bwachter", 1);
+
+  strncpy(shm->user, "bwachter", UXLAUNCH_NAME_LIMIT);
 
   pid=fork();
   if (pid==0){

@@ -21,12 +21,16 @@ UxSelect::UxSelect(): QMainWindow(){
   if (shmId.isNull()){
     qDebug() << "No SHM available!";
     messageLabel->setText("No SHM available.");
-  } else
+  } else {
     qDebug() << "SHM_ID: " << shmId;
-
-  //FIXME, take this from pre-initialized SHM area
-  if (getenv("UX_USER"))
-    userInput->setText(getenv("UX_USER"));
+    shm=(uxlaunch_chooser_shm *) shmat(shmId.toInt(), 0, 0);
+    if (shm==(void*)-1){
+      messageLabel->setText("Unable to attach SHM");
+    } else {
+      userInput->setText(shm->user);
+      shmdt(shm);
+    }
+  }
 
   uxConfig=static_cast<UxConfig>(settings.value("uxconfig").toInt());
   qDebug() << uxConfig << (uxConfig & UxDisplayPassword) << (uxConfig & UxDisplaySession);
