@@ -131,7 +131,7 @@ void UxSelect::dumpData(){
     if (isSessionWidgetActive())
       qDebug() << "Session: " << selectedUx->data(Qt::UserRole).toString();
   } else {
-    shm=(shm_exchange *) shmat(shmId.toInt(), 0, 0);
+    shm=(uxlaunch_chooser_shm *) shmat(shmId.toInt(), 0, 0);
 
     if (isUserWidgetActive())
       strncpy(shm->user, userInput->text().toLatin1(), 255);

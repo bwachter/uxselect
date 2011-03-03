@@ -12,7 +12,11 @@
 #include <security/pam_appl.h>
 #include "ui_uxselect.h"
 
-#include "shmdata.h"
+#ifdef USE_UXLAUNCH
+#include <uxlaunch-ipc.h>
+#else
+#include "uxlaunch-ipc.h"
+#endif
 
 class UxSelect: public QMainWindow, Ui::UxSelect {
   Q_OBJECT
@@ -31,7 +35,7 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   int ret;
   pam_handle_t *pamh;
   QString shmId;
-  shm_exchange *shm;
+  uxlaunch_chooser_shm *shm;
   struct pam_conv pamc;
   static UxSelect *UxSelectInstance;
 

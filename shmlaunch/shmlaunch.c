@@ -5,18 +5,23 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include "../src/shmdata.h"
+#ifdef USE_UXLAUNCH
+#include <uxlaunch-ipc.h>
+#else
+#include "../src/uxlaunch-ipc.h"
+#endif
 
 int main(){
   int shm_id;
-  shm_exchange *shm;
+  uxlaunch_chooser_shm *shm;
   char shm_id_str[50];
-  const int shm_size=sizeof(shm_exchange);
+  const int shm_size=sizeof(uxlaunch_chooser_shm);
   pid_t pid;
+
 
   shm_id=shmget(IPC_PRIVATE, shm_size,
                 IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-  shm=(shm_exchange *) shmat(shm_id, 0, 0);
+  shm=(uxlaunch_chooser_shm *) shmat(shm_id, 0, 0);
   printf("shared memory attached at address %p\n", shm);
 
   printf("SHM_ID: %i\n", shm_id);
