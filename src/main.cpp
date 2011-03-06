@@ -1,7 +1,23 @@
 #include <QApplication>
 #include "uxselect.h"
 
+#ifdef USE_PAMHELPER
+int pfd[2];
+#endif
+
 int main(int argc, char** argv){
+#ifdef USE_PAMHELPER
+  // we need fd 3 for checkpassword, which we'll most likely not get
+  // if we set up the pipe at some later point
+  if (pipe(pfd)){
+    qDebug() << "pipe() failed";
+    exit(-1);
+  }
+  if (pfd[0]!=3){
+    qDebug() << "pfd != 3: " << pfd[0];
+    exit(-1);
+  }
+#endif
 
   QApplication app(argc, argv);
   QCoreApplication::setOrganizationName("aard");

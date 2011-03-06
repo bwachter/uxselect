@@ -3,6 +3,10 @@
 #include <pwd.h>
 #include "uxselect.h"
 
+#ifdef USE_PAMHELPER
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
 
 UxSelect *UxSelect::UxSelectInstance;
 
@@ -20,12 +24,12 @@ UxSelect::UxSelect(): QMainWindow(){
   shmId=getenv("SHM_ID");
   if (shmId.isNull()){
     qDebug() << "No SHM available!";
-    messageLabel->setText("No SHM available.");
+    messageLabel->setText(tr("No SHM available."));
   } else {
     qDebug() << "SHM_ID: " << shmId;
     shm=(uxlaunch_chooser_shm *) shmat(shmId.toInt(), 0, 0);
     if (shm==(void*)-1){
-      messageLabel->setText("Unable to attach SHM");
+      messageLabel->setText(tr("Unable to attach SHM"));
     } else {
       userInput->setText(shm->user);
       shmdt(shm);
@@ -46,6 +50,7 @@ UxSelect::UxSelect(): QMainWindow(){
   else createUxList();
 }
 
+#ifndef USE_PAMHELPER
 int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
                            struct pam_response **resp, void *appdata_ptr){
   struct pam_response *pamr;
@@ -85,6 +90,7 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
   *resp=pamr;
   return PAM_SUCCESS;
 }
+#endif
 
 void UxSelect::createUserList(){
   struct passwd *pwent;
@@ -104,6 +110,12 @@ void UxSelect::createUserList(){
     pwent = getpwent();
   }
   endpwent();
+
+  if (userSelectionList->count()!=0){
+    if (userSelectionList->selectedItems().isEmpty())
+      userSelectionList->setCurrentItem(userSelectionList->item(0));
+  } else
+    displayUserWidgets(false);
 }
 
 void UxSelect::createUxList(){
@@ -116,11 +128,18 @@ void UxSelect::createUxList(){
     item->setText(settings.value("name").toString());
     item->setData(Qt::UserRole, settings.value("path").toString());
     item->setData(Qt::UserRole+1, settings.value("description").toString());
+    // FIXME, load icon from config file
     item->setIcon(QIcon(":/images/aardvark_icon.png"));
     settings.endGroup();
     if (QFile::exists(item->data(Qt::UserRole).toString()))
       uxSelectionList->insertItem(0, item);
   }
+
+  if (uxSelectionList->count()!=0){
+    if (uxSelectionList->selectedItems().isEmpty())
+      uxSelectionList->setCurrentItem(uxSelectionList->item(0));
+  } else
+    displaySessionWidgets(false);
 }
 
 void UxSelect::dumpData(){
@@ -171,6 +190,7 @@ void UxSelect::displayPasswordWidgets(bool state){
 void UxSelect::displaySessionWidgets(bool state){
   uxSelectionList->setVisible(state);
   uxSelectionLabel->setVisible(state);
+  //FIXME, add/remove bits from uxConfig
 }
 
 bool UxSelect::isPasswordWidgetActive(){
@@ -200,6 +220,47 @@ void UxSelect::selectUx(QListWidgetItem *item){
 
 void UxSelect::tryLogin(){
   if (isPasswordWidgetActive()){
+#ifdef USE_PAMHELPER
+    int status;
+    pid_t pid=fork();
+    if (pid==-1){
+      qDebug() << "fork() failed";
+      QCoreApplication::exit(-1);
+    } else if (pid==0){
+      ::close(4);
+      execlp("uxselect.pamhelper", "uxselect.pamhelper",
+             "/bin/true", (char *)NULL);
+    } else {
+      ::close(3);
+      char buf[512];
+      int len;
+
+      strncpy(buf, userInput->text().toLatin1(), 512);
+      len=userInput->text().length()+1;
+      strncpy(buf+len, passwordInput->text().toLatin1(), 512-len);
+      len+=passwordInput->text().length()+1;
+
+      write(4,buf,len+1);
+      ::close(4);
+
+      waitpid(pid, &status, 0);
+      if (status!=0){
+        messageLabel->setText(tr("Login failed: %1").arg(status));
+        // since we just closed fd 3 and 4 we'll most likely get them
+        // again when creating a new pipe now
+        if (pipe(pfd)){
+          qDebug() << "pipe() failed";
+          QCoreApplication::exit(-1);
+        }
+        if (pfd[0]!=3){
+          qDebug() << "pfd != 3: " << pfd[0];
+          QCoreApplication::exit(-1);
+        }
+      } else
+        dumpData();
+    }
+
+#else
     // try to do pam-foo, if required
     pamh=NULL;
     pamc.conv=&pamConversation;
@@ -214,13 +275,12 @@ void UxSelect::tryLogin(){
     qDebug() << "Trying PAM auth";
     ret=pam_authenticate(pamh, 0);
     if (ret!=PAM_SUCCESS){
-      //FIXME, make some nice UI foo about login failed
-      messageLabel->setText("Login failed.");
-      qDebug() << "We're doomed: " << pam_strerror(pamh, ret);
+      messageLabel->setText(tr("Login failed: %1").arg(pam_strerror(pamh, ret)));
     } else
       dumpData();
 
     pam_end(pamh, ret);
+#endif
   } else {
     dumpData();
   }

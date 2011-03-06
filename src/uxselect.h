@@ -9,13 +9,17 @@
 #define LOWEST_ID 500
 
 #include <QtGui>
-#include <security/pam_appl.h>
 #include "ui_uxselect.h"
 
 #ifdef USE_UXLAUNCH
 #include <uxlaunch-ipc.h>
 #else
 #include "uxlaunch-ipc.h"
+#endif
+
+#ifdef USE_PAMHELPER
+#else
+#include <security/pam_appl.h>
 #endif
 
 class UxSelect: public QMainWindow, Ui::UxSelect {
@@ -33,10 +37,12 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   UxConfig uxConfig;
   QSettings settings;
   int ret;
-  pam_handle_t *pamh;
   QString shmId;
   uxlaunch_chooser_shm *shm;
+#ifndef USE_PAMHELPER
   struct pam_conv pamc;
+  pam_handle_t *pamh;
+#endif
   static UxSelect *UxSelectInstance;
 
   void dumpData();
@@ -48,8 +54,10 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   bool isPasswordWidgetActive();
   bool isUserWidgetActive();
   bool isSessionWidgetActive();
+#ifndef USE_PAMHELPER
   static int pamConversation(int num_msg, const struct pam_message **msg,
                              struct pam_response **resp, void *appdata_ptr);
+#endif
 
   public slots:
   void tryLogin();
@@ -57,5 +65,8 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   void selectUx(QListWidgetItem *item);
 };
 
+#ifdef USE_PAMHELPER
+extern int pfd[2];
+#endif
 
 #endif

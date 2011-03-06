@@ -1,13 +1,11 @@
 BUILD = ../build
-FORMS = uxselect.ui
-HEADERS = uxselect.h
-SOURCES = main.cpp \
-        uxselect.cpp
-RESOURCES = uxselect.qrc
+SOURCES = pamhelper.c
 TEMPLATE = app
-TARGET = uxselect
+TARGET = uxselect.pamhelper
+CONFIG -= qt
+CONFIG += use_c_linker
+QMAKE_CFLAGS += -std=gnu99
 LIBS += -lpam
-DEFINES += USE_PAMHELPER
 
 unix:target.path = $${PREFIX}/${PREFIX}/bin
 INSTALLS += target
