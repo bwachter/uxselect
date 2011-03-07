@@ -168,6 +168,7 @@ void UxSelect::dumpData(){
               selectedUx->text().toLatin1(), UXLAUNCH_NAME_LIMIT);
     }
 
+
     shmdt(shm);
   }
 
@@ -180,17 +181,31 @@ void UxSelect::displayUserWidgets(bool state){
   userDescriptionLabel->setVisible(state);
   userLabel->setVisible(state);
   userInput->setVisible(state);
+
+  if (state)
+    uxConfig=static_cast<UxConfig>(uxConfig|UxDisplayUser);
+  else if (uxConfig & UxDisplayUser)
+    uxConfig=static_cast<UxConfig>(uxConfig^UxDisplayUser);
 }
 
 void UxSelect::displayPasswordWidgets(bool state){
   passwordLabel->setVisible(state);
   passwordInput->setVisible(state);
+
+  if (state)
+    uxConfig=static_cast<UxConfig>(uxConfig|UxDisplayPassword);
+  else if (uxConfig & UxDisplayPassword)
+    uxConfig=static_cast<UxConfig>(uxConfig^UxDisplayPassword);
 }
 
 void UxSelect::displaySessionWidgets(bool state){
   uxSelectionList->setVisible(state);
   uxSelectionLabel->setVisible(state);
-  //FIXME, add/remove bits from uxConfig
+
+  if (state)
+    uxConfig=static_cast<UxConfig>(uxConfig|UxDisplaySession);
+  else if (uxConfig & UxDisplaySession)
+    uxConfig=static_cast<UxConfig>(uxConfig^UxDisplaySession);
 }
 
 bool UxSelect::isPasswordWidgetActive(){
