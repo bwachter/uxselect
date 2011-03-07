@@ -19,7 +19,29 @@ UxSelect::UxSelect(): QMainWindow(){
     qDebug() << "Setting initial settings...";
     settings.setValue("initialized", true);
     settings.setValue("uxconfig", UxDisplaySession|UxDisplayUser);
+    settings.setValue("uxIconSize", QSize(64,64));
+    settings.setValue("userIconSize", QSize(64,64));
+    settings.setValue("sessionIcon", "");
+    settings.setValue("userIcon", "");
+    settings.setValue("bannerPixmap", "");
   }
+
+  QSize iconSize=settings.value("uxIconSize").toSize();
+  if (iconSize.isValid())
+    uxSelectionList->setIconSize(iconSize);
+  iconSize=settings.value("userIconSize").toSize();
+  if (iconSize.isValid())
+    userSelectionList->setIconSize(iconSize);
+
+  defaultSessionIcon=settings.value("sessionIcon").toString();
+  if (defaultSessionIcon.isEmpty() || !QFile::exists(defaultSessionIcon))
+    defaultSessionIcon=":/images/aardvark_icon.png";
+
+  defaultUserIcon=settings.value("userIcon").toString();
+  if (defaultUserIcon.isEmpty() || !QFile::exists(defaultUserIcon))
+    defaultUserIcon=":/images/aardvark_icon.png";
+
+  bannerLabel->setPixmap(QPixmap(settings.value("bannerPixmap").toString()));
 
   shmId=getenv("SHM_ID");
   if (shmId.isNull()){
@@ -32,12 +54,13 @@ UxSelect::UxSelect(): QMainWindow(){
       messageLabel->setText(tr("Unable to attach SHM"));
     } else {
       userInput->setText(shm->user);
+      defaultUser=shm->user;
+      defaultSession=shm->session_name;
       shmdt(shm);
     }
   }
 
   uxConfig=static_cast<UxConfig>(settings.value("uxconfig").toInt());
-  qDebug() << uxConfig << (uxConfig & UxDisplayPassword) << (uxConfig & UxDisplaySession);
   if (!isPasswordWidgetActive())
     displayPasswordWidgets(false);
 
@@ -93,6 +116,7 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
 #endif
 
 void UxSelect::createUserList(){
+  // FIXME, make it possible to select items by keyboard
   struct passwd *pwent;
   setpwent();
   for (pwent=getpwent();pwent!=NULL;pwent=getpwent()){
@@ -103,10 +127,15 @@ void UxSelect::createUserList(){
     //TODO: GECOS parsing
     item->setText(pwent->pw_name);
     item->setData(Qt::UserRole, pwent->pw_name);
-    item->setIcon(QIcon(":/images/aardvark_icon.png"));
+    item->setIcon(QIcon(defaultUserIcon));
+
+    item->setTextAlignment(Qt::AlignHCenter|Qt::AlignBottom);
+
     userSelectionList->insertItem(0, item);
-    qDebug() << "New user: " << pwent->pw_name << ", " << pwent->pw_uid
-             << ", " << pwent->pw_shell;
+
+    if (defaultUser==item->data(Qt::UserRole).toString())
+      userSelectionList->setCurrentItem(item);
+
     pwent = getpwent();
   }
   endpwent();
@@ -114,25 +143,39 @@ void UxSelect::createUserList(){
   if (userSelectionList->count()!=0){
     if (userSelectionList->selectedItems().isEmpty())
       userSelectionList->setCurrentItem(userSelectionList->item(0));
+
+    userInput->setText(
+      userSelectionList->currentItem()->data(Qt::UserRole).toString());
   } else
     displayUserWidgets(false);
 }
 
 void UxSelect::createUxList(){
-  //FIXME, ignore empty/bogus entries
   QStringList sessionList=settings.value("uxlist").toStringList();
 
   for (int i=0;i<sessionList.size();i++){
     QListWidgetItem *item=new QListWidgetItem;
+    QString iconPath;
     settings.beginGroup(sessionList.at(i));
     item->setText(settings.value("name").toString());
     item->setData(Qt::UserRole, settings.value("path").toString());
     item->setData(Qt::UserRole+1, settings.value("description").toString());
-    // FIXME, load icon from config file
-    item->setIcon(QIcon(":/images/aardvark_icon.png"));
+
+    iconPath=settings.value("icon").toString();
+    if (!iconPath.isEmpty() && QFile::exists(iconPath))
+      item->setIcon(QIcon(iconPath));
+    else
+      item->setIcon(QIcon(defaultSessionIcon));
+
+    item->setTextAlignment(Qt::AlignHCenter|Qt::AlignBottom);
+
     settings.endGroup();
-    if (QFile::exists(item->data(Qt::UserRole).toString()))
+    if (QFile::exists(item->data(Qt::UserRole).toString())){
       uxSelectionList->insertItem(0, item);
+
+      if (defaultSession==item->data(Qt::UserRole).toString())
+        uxSelectionList->setCurrentItem(item);
+    }
   }
 
   if (uxSelectionList->count()!=0){
@@ -167,8 +210,6 @@ void UxSelect::dumpData(){
       strncpy(shm->session_name,
               selectedUx->text().toLatin1(), UXLAUNCH_NAME_LIMIT);
     }
-
-
     shmdt(shm);
   }
 

@@ -37,7 +37,8 @@ class UxSelect: public QMainWindow, Ui::UxSelect {
   UxConfig uxConfig;
   QSettings settings;
   int ret;
-  QString shmId;
+  QString shmId, defaultUser, defaultSession,
+    defaultUserIcon, defaultSessionIcon;
   uxlaunch_chooser_shm *shm;
 #ifndef USE_PAMHELPER
   struct pam_conv pamc;
