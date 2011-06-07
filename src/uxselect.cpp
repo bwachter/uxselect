@@ -56,6 +56,7 @@ UxSelect::UxSelect(): QMainWindow(){
       userInput->setText(shm->user);
       defaultUser=shm->user;
       defaultSession=shm->session_name;
+      defaultSessionPath=shm->session_path;
       shmdt(shm);
     }
   }
@@ -116,7 +117,6 @@ int UxSelect::pamConversation(int num_msg, const struct pam_message **msg,
 #endif
 
 void UxSelect::createUserList(){
-  // FIXME, make it possible to select items by keyboard
   struct passwd *pwent;
   setpwent();
   for (pwent=getpwent();pwent!=NULL;pwent=getpwent()){
@@ -173,7 +173,12 @@ void UxSelect::createUxList(){
     if (QFile::exists(item->data(Qt::UserRole).toString())){
       uxSelectionList->insertItem(0, item);
 
-      if (defaultSession==item->data(Qt::UserRole).toString())
+      // session path may be ambigous. Only select entry based on
+      // path if there's nothing yet selected
+      if (defaultSession==item->text())
+        uxSelectionList->setCurrentItem(item);
+      else if (defaultSessionPath==item->data(Qt::UserRole).toString() &&
+               uxSelectionList->selectedItems().isEmpty())
         uxSelectionList->setCurrentItem(item);
     }
   }
