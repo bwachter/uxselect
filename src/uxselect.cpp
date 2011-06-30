@@ -135,8 +135,6 @@ void UxSelect::createUserList(){
 
     if (defaultUser==item->data(Qt::UserRole).toString())
       userSelectionList->setCurrentItem(item);
-
-    pwent = getpwent();
   }
   endpwent();
 
